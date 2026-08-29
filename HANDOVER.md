@@ -8,7 +8,7 @@
 
 **배포 목표:** GitHub Pages → 디스코드 링크 공유  
 **파일:** `gacha-calculator.html` (완성본 존재, index.html로 이름 바꿔 배포할 것)  
-**GitHub 계정:** sosowwww2@gmail.com (Google 계정 연동)
+**GitHub 계정:** ohjih (Google 계정 연동)
 
 ---
 
