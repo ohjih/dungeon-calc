@@ -34,9 +34,15 @@
   목표가 클수록(SS 이상) 오차는 작아집니다.
 - D\~A를 평균으로 처리하므로 **S 1\~2성처럼 값싼 목표에서는 90% 구간 위쪽이 좁게 나옵니다.**
   실제로는 운이 나쁘면 더 걸릴 수 있습니다. SS 이상 목표에서는 영향이 없습니다.
-- 천장(pity)이나 중복 보상은 없다고 가정했습니다.
-- Lv1\~5의 레벨업 요구 소환수는 실측이 아니라 추정치입니다(Lv6→7, Lv7→8만 확인됨).
-  `고급 설정`에서 직접 고칠 수 있습니다.
+- **레벨업 요구 소환수는 Lv6→7(3,800)과 Lv7→8(7,600)만 확인**됐고, 나머지는 2배수 추정값입니다.
+  Lv8 이상 값은 SS 4★·SSS 목표에서 결과를 ±38\~63% 움직이므로, 그 등급을 노린다면
+  `고급 설정`에 실제 값을 넣고 다시 계산하세요. **SS 2★ 이하 목표에는 영향이 없습니다.**
+  Lv1\~5 값도 추정치지만 **상점 레벨 6 이상에서 시작하면 아예 쓰이지 않습니다.**
+
+## 확인된 전제
+
+등급·별 확률표는 **게임 내 확률 공개표에서 직접 옮겨 적고 검토를 마친 값**입니다.
+**4개 카테고리의 확률이 모두 같다는 것**과 **천장(pity)이 없다는 것**도 확인했습니다.
 
 자세한 확률표와 검증 기준값은 [HANDOVER.md](HANDOVER.md)에 있습니다.
 
@@ -73,6 +79,12 @@ Estimates how many summons and diamonds it takes to build one target item, using
   The bigger the target (SS and above), the smaller the error.
 - Because D\~A are averaged, **the upper half of the 90% range is too narrow for cheap targets like S 1\~2 star.**
   A bad run can really take longer. This does not affect SS-tier goals.
-- No pity system or duplicate rewards are assumed.
-- Level-up requirements for Lv1\~5 are estimates, not measured (only Lv6→7 and Lv7→8 are confirmed).
-  They only matter if you start below Lv6, and you can override them under `Advanced`.
+- **Only the Lv6→7 (3,800) and Lv7→8 (7,600) level-up requirements are confirmed**; the rest are ×2 estimates.
+  The Lv8-and-up values swing SS 4-star and SSS results by 38\~63%, so if you are chasing those,
+  put the real numbers into `Advanced` and recalculate. **Targets at SS 2-star or below are unaffected.**
+  The Lv1\~5 values are estimates too, but they are never used if you start at shop level 6 or higher.
+
+## Confirmed assumptions
+
+The grade and star probability tables were transcribed directly from the game's published drop-rate screen
+and checked. All four categories share the same rates, and there is **no pity system**.
