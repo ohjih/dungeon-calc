@@ -4,6 +4,12 @@
 
 👉 **https://ohjih.github.io/dungeon-calc/**
 
+한국어 / English 두 언어를 지원합니다. 페이지 오른쪽 위 버튼으로 바꾸면 선택이 저장되고,
+`설정 링크 복사`로 만든 주소에도 언어가 함께 담깁니다 (`?lang=ko` / `?lang=en`).
+
+*Available in English — use the toggle at the top right, or open
+[?lang=en](https://ohjih.github.io/dungeon-calc/?lang=en) directly. Scroll down for the English summary.*
+
 ## 쓰는 법
 
 1. 위 탭에서 장비 종류(무기 / 마법서 / 반지 / 탈리스만)를 고릅니다.
@@ -33,3 +39,40 @@
   `고급 설정`에서 직접 고칠 수 있습니다.
 
 자세한 확률표와 검증 기준값은 [HANDOVER.md](HANDOVER.md)에 있습니다.
+
+
+---
+
+# Dungeon Odyssey — Equipment Fusion Cost Calculator
+
+Estimates how many summons and diamonds it takes to build one target item, using a Monte Carlo simulation.
+
+👉 **https://ohjih.github.io/dungeon-calc/?lang=en**
+
+## How to use
+
+1. Pick an equipment type at the top (Weapon / Spellbook / Ring / Talisman).
+2. Enter your **shop level** and how many summons you have already made at that level.
+3. Fill in the **owned counts** by copying the `n/5` numbers from the game screen.
+   Equipped gear does not seem to be counted there — if you can use it as material, add 1 to that cell.
+4. Tap the cell you want to build to make it the **target**, then press `Calculate`.
+
+`Copy setup link` puts your current inputs into the URL, so reopening that link restores everything.
+
+## How it works
+
+- Fusion is **5 of the same grade and star → 1 of the next star**, and 5× a 4-star → 1 of the next grade at 1 star.
+  Nothing is lost, so each step up is worth exactly 5×.
+- Grades D\~A are frequent and low-value, so they are handled by **expected value**.
+  S and SS are rare and high-value, so they are **drawn individually** from a geometric distribution.
+- Shop level rises automatically with summon count, and each level has its own probability table.
+
+## Known limits
+
+- **Fusion remainders (leftovers that never reach 5) are ignored.** The median runs up to ~3% optimistic.
+  The bigger the target (SS and above), the smaller the error.
+- Because D\~A are averaged, **the upper half of the 90% range is too narrow for cheap targets like S 1\~2 star.**
+  A bad run can really take longer. This does not affect SS-tier goals.
+- No pity system or duplicate rewards are assumed.
+- Level-up requirements for Lv1\~5 are estimates, not measured (only Lv6→7 and Lv7→8 are confirmed).
+  They only matter if you start below Lv6, and you can override them under `Advanced`.
