@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>장비 합성 비용 계산기</title>
+<style>
+:root{
+  --bg:#171422;
+  --bg2:#100e18;
+  --panel:#272138;
+  --panel2:#322a47;
+  --line:#443a5f;
+  --ink:#ece8f7;
+  --muted:#968cb4;
+  --gold:#f5c542;
+  --violet:#8a63d8;
+  --magenta:#c94ba8;
+  --d:#cfd2dd; --c:#a6e26a; --b:#63d6dd; --a:#e88ae0; --s:#ef5a5a; --ss:#f5c542; --sss:#7fe6d8;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:system-ui,-apple-system,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(1200px 600px at 50% -200px, #2b2340 0%, transparent 70%),
+    var(--bg);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:15px;
+  line-height:1.55;
+  padding:20px 14px 80px;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:760px;margin:0 auto}
+
+/* ---- header ---- */
+header{margin-bottom:22px}
+.eyebrow{
+  font-family:var(--mono);font-size:10px;letter-spacing:.34em;text-transform:uppercase;
+  color:var(--gold);opacity:.8;margin-bottom:6px;
+}
+h1{
+  margin:0;font-size:clamp(24px,6vw,34px);font-weight:800;letter-spacing:-.02em;
+}
+h1 em{font-style:normal;color:var(--gold)}
+.sub{color:var(--muted);font-size:13px;margin-top:6px}
+
+/* ---- panel ---- */
+.panel{
+  background:linear-gradient(180deg,var(--panel2),var(--panel));
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:16px;
+  margin-bottom:14px;
+  box-shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 8px 24px rgba(0,0,0,.35);
+}
+.plabel{
+  font-family:var(--mono);font-size:10px;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:12px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+}
+.plabel span{letter-spacing:0;text-transform:none;font-family:var(--sans);font-size:11px;opacity:.75}
+
+/* ---- tabs ---- */
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px}
+.tab{
+  appearance:none;border:1px solid var(--line);background:var(--bg2);color:var(--muted);
+  padding:9px 4px;border-radius:8px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;
+  transition:.13s;
+}
+.tab:hover{color:var(--ink);border-color:#5b4d7d}
+.tab[aria-selected="true"]{background:var(--violet);border-color:#a888f0;color:#fff}
+
+/* ---- fields ---- */
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.f{display:flex;flex-direction:column;gap:5px}
+.f label{font-size:11px;color:var(--muted);letter-spacing:.02em}
+.f input,.f select{
+  background:var(--bg2);border:1px solid var(--line);color:var(--ink);
+  border-radius:7px;padding:9px 10px;font-family:var(--mono);font-size:14px;width:100%;
+}
+.f input:focus,.f select:focus{outline:2px solid var(--gold);outline-offset:1px;border-color:var(--gold)}
+
+/* ---- item grid ---- */
+.row{display:grid;grid-template-columns:34px repeat(4,1fr);gap:6px;align-items:center;margin-bottom:6px}
+.rk{
+  font-family:var(--mono);font-weight:700;font-size:13px;text-align:center;letter-spacing:.02em;
+}
+.slot{
+  position:relative;background:var(--bg2);border:1px solid var(--line);border-radius:7px;
+  padding:5px 4px 4px;cursor:pointer;transition:.12s;text-align:center;
+}
+.slot:hover{border-color:#6a5a92}
+.slot.tgt{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 0 16px rgba(245,197,66,.28);background:#2a2338}
+.stars{font-size:9px;letter-spacing:1px;line-height:1;height:10px;margin-bottom:3px}
+.slot input{
+  width:100%;background:transparent;border:0;color:var(--ink);text-align:center;
+  font-family:var(--mono);font-size:15px;padding:2px 0;
+}
+.slot input:focus{outline:none;background:rgba(245,197,66,.1);border-radius:4px}
+.slot.tgt::after{
+  content:"목표";position:absolute;top:-8px;left:50%;transform:translateX(-50%);
+  background:var(--gold);color:#2a2000;font-size:9px;font-weight:800;padding:1px 6px;border-radius:6px;letter-spacing:.04em;
+}
+.row.sssrow{grid-template-columns:34px 1fr 3fr}
+.hint{font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5}
+
+/* ---- ladder ---- */
+.ladder{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)}
+.rail{position:relative;height:8px;border-radius:4px;background:var(--bg2);border:1px solid var(--line);margin:26px 0 30px}
+.fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:linear-gradient(90deg,#4a3d6e,var(--gold));transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.tick{position:absolute;top:-6px;width:1px;height:20px;background:var(--line)}
+.tick span{position:absolute;top:22px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:9px;color:var(--muted)}
+.pin{position:absolute;top:-22px;transform:translateX(-50%);font-family:var(--mono);font-size:10px;white-space:nowrap}
+.pin b{display:block;text-align:center;font-size:14px;line-height:1}
+
+/* ---- button ---- */
+.go{
+  width:100%;appearance:none;border:0;border-radius:9px;cursor:pointer;
+  background:linear-gradient(180deg,#d45cb8,var(--magenta));color:#fff;
+  font-family:var(--sans);font-size:16px;font-weight:800;letter-spacing:.02em;padding:14px;
+  box-shadow:0 3px 0 #8e2f77, 0 8px 20px rgba(201,75,168,.3);transition:.1s;
+}
+.go:active{transform:translateY(2px);box-shadow:0 1px 0 #8e2f77}
+.go:disabled{opacity:.5;cursor:wait}
+.ghost{
+  appearance:none;border:1px solid var(--line);background:transparent;color:var(--muted);
+  border-radius:7px;padding:8px 12px;font-size:12px;cursor:pointer;font-family:var(--sans);
+}
+.ghost:hover{color:var(--ink);border-color:#6a5a92}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+
+/* ---- result ---- */
+.big{font-family:var(--mono);font-size:clamp(30px,9vw,46px);font-weight:700;color:var(--gold);line-height:1.1;letter-spacing:-.02em}
+.bigunit{font-size:15px;color:var(--muted);font-weight:400;margin-left:6px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin-top:14px;font-size:13px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;font-family:var(--mono);text-align:right}
+table{width:100%;border-collapse:collapse;margin-top:14px;font-size:12px}
+th,td{padding:6px 4px;text-align:right;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:500;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase}
+th:first-child,td:first-child{text-align:left}
+td{font-family:var(--mono)}
+.note{font-size:11.5px;color:var(--muted);margin-top:14px;line-height:1.6;border-top:1px dashed var(--line);padding-top:12px}
+details summary{cursor:pointer;color:var(--muted);font-size:12px;font-family:var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:4px 0}
+details[open] summary{color:var(--ink);margin-bottom:10px}
+.reqgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px}
+.reqgrid .f label{font-family:var(--mono);font-size:10px}
+.warn{background:rgba(239,90,90,.12);border:1px solid rgba(239,90,90,.4);border-radius:7px;padding:10px 12px;font-size:12.5px;margin-top:12px}
+@media(max-width:420px){
+  .row{grid-template-columns:26px repeat(4,1fr);gap:4px}
+  .slot input{font-size:14px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Equipment fusion planner</div>
+  <h1>장비 합성 <em>비용 계산기</em></h1>
+  <div class="sub">목표 장비 하나를 만들 때까지 필요한 소환 횟수와 다이아를 몬테카를로로 추정합니다.</div>
+</header>
+
+<div class="panel">
+  <div class="plabel">카테고리 <span>탭마다 수량과 상점 레벨이 따로 저장됩니다</span></div>
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <div class="fields">
+    <div class="f">
+      <label for="lv">상점 레벨</label>
+      <select id="lv"></select>
+    </div>
+    <div class="f">
+      <label for="prog">현재 레벨에서 이미 뽑은 횟수</label>
+      <input id="prog" type="number" min="0" step="1" value="0">
+    </div>
+    <div class="f">
+      <label for="dia">보유 다이아 (선택)</label>
+      <input id="dia" type="number" min="0" step="1" value="0">
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="plabel">보유 수량 <span>칸을 누르면 목표로 지정</span></div>
+  <div id="grid"></div>
+  <div class="fields" style="margin-top:14px">
+    <div class="f">
+      <label for="qty">목표 개수</label>
+      <input id="qty" type="number" min="1" max="4" step="1" value="1">
+    </div>
+    <div class="f">
+      <label for="trials">시뮬레이션 횟수</label>
+      <select id="trials">
+        <option value="1000">1,000회 (빠름)</option>
+        <option value="3000" selected>3,000회 (권장)</option>
+        <option value="10000">10,000회 (정밀)</option>
+      </select>
+    </div>
+  </div>
+  <div class="hint">
+    게임 화면의 <b>n/5</b> 숫자를 그대로 넣으세요. 장착 중인 장비는 이 숫자에 포함되지 않는 것으로 보입니다 —
+    재료로 쓸 수 있다면 해당 칸에 1을 더해주세요.
+  </div>
+
+  <div class="ladder">
+    <div class="plabel" style="margin-bottom:0">등급 사다리 <span>가로축은 5배 간격(로그) — 한 칸이 합성 1단계</span></div>
+    <div class="rail" id="rail">
+      <div class="fill" id="fill"></div>
+    </div>
+  </div>
+</div>
+
+<button class="go" id="go">계산하기</button>
+<div class="btnrow">
+  <button class="ghost" id="clear">이 탭 수량 비우기</button>
+  <button class="ghost" id="share">설정 링크 복사</button>
+</div>
+
+<div class="panel" id="out" style="display:none;margin-top:14px"></div>
+
+<div class="panel">
+  <details>
+    <summary>고급 설정</summary>
+    <div class="fields" style="margin-bottom:12px">
+      <div class="f">
+        <label for="bundle">묶음 소환 횟수</label>
+        <input id="bundle" type="number" min="1" step="1" value="55">
+      </div>
+      <div class="f">
+        <label for="cost">묶음 가격 (다이아)</label>
+        <input id="cost" type="number" min="1" step="1" value="2500">
+      </div>
+    </div>
+    <div class="plabel">레벨업에 필요한 소환 횟수 <span>lv6→7 = 3,800과 lv7→8 = 7,600만 확인됨. 나머지는 2배수 추정값</span></div>
+    <div class="reqgrid" id="reqs"></div>
+  </details>
+</div>
+
+<div class="note">
+  등급·별 확률표는 4개 카테고리가 모두 동일하다는 전제로 내장되어 있습니다.
+  천장이나 중복 보상은 없다고 가정했습니다. 결과는 확률 시뮬레이션 추정치이며 실제 결과는 크게 달라질 수 있습니다.
+</div>
+
+</div>
+
+<script>
+"use strict";
+
+/* ============ 게임 데이터 ============ */
+const GRADES = [
+  {k:"D",   stars:4, col:"var(--d)"},
+  {k:"C",   stars:4, col:"var(--c)"},
+  {k:"B",   stars:4, col:"var(--b)"},
+  {k:"A",   stars:4, col:"var(--a)"},
+  {k:"S",   stars:4, col:"var(--s)"},
+  {k:"SS",  stars:4, col:"var(--ss)"},
+  {k:"SSS", stars:1, col:"var(--sss)"}
+];
+
+// 가치 단위: SS★1 = 1.  등급 g(0=D), 별 s(1~4)
+const val = (g,s) => Math.pow(5, 4*g + s - 1 - 20);
+
+// 등급 확률 (%)
+const P = {
+  1:{d:60.1, c:33.59, b:5.81,  a:0.499,  s:0.001, ss:0},
+  2:{d:54.2, c:37.45, b:6.55,  a:1.795,  s:0.005, ss:0},
+  3:{d:45.8, c:40.31, b:8.69,  a:5.18,   s:0.02,  ss:0},
+  4:{d:36.3, c:42.11, b:12.11, a:9.379,  s:0.1,   ss:0.001},
+  5:{d:20.32,c:32.83, b:26.57, a:19.775, s:0.5,   ss:0.005},
+  6:{d:10.14,c:24.99, b:40.68, a:23.18,  s:1,     ss:0.01},
+  7:{d:0,    c:29.16, b:40.56, a:28.75,  s:1.5,   ss:0.03},
+  8:{d:0,    c:29.83, b:33.14, a:33.97,  s:3,     ss:0.06},
+  9:{d:0,    c:24.03, b:32.38, a:38.99,  s:4.5,   ss:0.1},
+ 10:{d:0,    c:18.8,  b:32,    a:43,     s:6,     ss:0.2},
+ 11:{d:0,    c:17.5,  b:32.09, a:44,     s:6.2,   ss:0.21},
+ 12:{d:0,    c:15.2,  b:33.18, a:45,     s:6.4,   ss:0.22},
+ 13:{d:0,    c:13.6,  b:33.57, a:46,     s:6.6,   ss:0.23},
+ 14:{d:0,    c:12.2,  b:33.76, a:47,     s:6.8,   ss:0.24},
+ 15:{d:0,    c:10.5,  b:34.25, a:48,     s:7,     ss:0.25}
+};
+const STAR = [.40,.30,.20,.10];                 // D~S 공통
+const SSSTAR = {                                 // SS 등급 별 분포
+  4:[.80,.20,0,0], 5:[.80,.20,0,0], 6:[.80,.20,0,0], 7:[.80,.20,0,0],
+  8:[.80,.20,0,0], 9:[.80,.20,0,0],10:[.80,.20,0,0],
+ 11:[.75,.21,.03,.01], 12:[.70,.22,.06,.02], 13:[.65,.23,.09,.03],
+ 14:[.60,.24,.12,.04], 15:[.55,.25,.15,.05]
+};
+const STARF = STAR.reduce((a,p,i)=>a+p*Math.pow(5,i),0); // 19.4
+
+// 레벨업 요구 소환수 (lv -> lv+1)
+const DEFREQ = {1:119,2:238,3:475,4:950,5:1900,6:3800,7:7600,8:15200,
+                9:30400,10:60800,11:121600,12:243200,13:486400,14:972800};
+let REQ = Object.assign({}, DEFREQ);
+
+// D~A 등급의 결정론적 기대 가치 (분산이 무시 가능해 평균으로 처리)
+function detRate(lv){
+  const p = P[lv];
+  return STARF * (p.d/100*val(0,1) + p.c/100*val(1,1) + p.b/100*val(2,1) + p.a/100*val(3,1));
+}
+// S/SS 는 "사건"으로 개별 추첨
+function makePool(lv){
+  const p = P[lv], vals=[], probs=[];
+  for(let s=1;s<=4;s++){ vals.push(val(4,s)); probs.push(p.s/100*STAR[s-1]); }
+  for(let s=1;s<=4;s++){
+    const q = (SSSTAR[lv]||[0,0,0,0])[s-1];
+    if(q>0){ vals.push(val(5,s)); probs.push(p.ss/100*q); }
+  }
+  const total = probs.reduce((a,b)=>a+b,0);
+  const cum=[]; let acc=0;
+  for(const q of probs){ acc += q/total; cum.push(acc); }
+  return {vals, cum, total};
+}
+const DET={}, POOL={};
+for(let lv=1;lv<=15;lv++){ DET[lv]=detRate(lv); POOL[lv]=makePool(lv); }
+
+/* ============ 상태 ============ */
+const CATS = ["무기","마법서","반지","탈리스만"];
+const blank = () => GRADES.map(g=>new Array(g.stars).fill(0));
+const state = CATS.map(()=>({lv:1, prog:0, dia:0, cnt:blank(), tg:5, ts:2}));
+let cur = 0;
+
+/* ============ UI 구성 ============ */
+const $ = id => document.getElementById(id);
+
+$("tabs").innerHTML = CATS.map((c,i)=>
+  `<button class="tab" role="tab" data-i="${i}" aria-selected="${i===0}">${c}</button>`).join("");
+$("tabs").onclick = e => {
+  const b = e.target.closest(".tab"); if(!b) return;
+  save(); cur = +b.dataset.i;
+  [...$("tabs").children].forEach((t,i)=>t.setAttribute("aria-selected", i===cur));
+  load();
+};
+
+$("lv").innerHTML = Array.from({length:15},(_,i)=>
+  `<option value="${i+1}">Lv.${i+1}</option>`).join("");
+
+$("reqs").innerHTML = Object.keys(DEFREQ).map(lv=>
+  `<div class="f"><label for="rq${lv}">lv${lv} → ${+lv+1}</label>
+   <input id="rq${lv}" type="number" min="1" step="1" value="${DEFREQ[lv]}"></div>`).join("");
+Object.keys(DEFREQ).forEach(lv=>{
+  $("rq"+lv).oninput = () => { REQ[lv] = Math.max(1, +$("rq"+lv).value||1); };
+});
+
+function starStr(n,g){ return "★".repeat(n) + (g.stars>1 ? "☆".repeat(g.stars-n) : ""); }
+
+$("grid").innerHTML = GRADES.map((g,gi)=>{
+  const cells = Array.from({length:g.stars},(_,si)=>{
+    const s = si+1;
+    return `<div class="slot" data-g="${gi}" data-s="${s}">
+      <div class="stars" style="color:${g.col}">${starStr(s,g)}</div>
+      <input type="number" min="0" step="1" value="0" data-g="${gi}" data-s="${s}" aria-label="${g.k} ${s}성 보유 수량">
+    </div>`;
+  }).join("");
+  const cls = g.stars===1 ? "row sssrow" : "row";
+  return `<div class="${cls}"><div class="rk" style="color:${g.col}">${g.k}</div>${cells}</div>`;
+}).join("");
+
+$("grid").addEventListener("click", e=>{
+  const sl = e.target.closest(".slot"); if(!sl) return;
+  if(e.target.tagName === "INPUT") return;
+  setTarget(+sl.dataset.g, +sl.dataset.s);
+});
+$("grid").addEventListener("input", e=>{
+  if(e.target.tagName === "INPUT"){ save(); drawLadder(); }
+});
+["lv","prog","dia","qty"].forEach(id => $(id).addEventListener("input", ()=>{ save(); drawLadder(); }));
+
+function setTarget(g,s){
+  state[cur].tg = g; state[cur].ts = s;
+  [...document.querySelectorAll(".slot")].forEach(el=>{
+    el.classList.toggle("tgt", +el.dataset.g===g && +el.dataset.s===s);
+  });
+  drawLadder();
+}
+
+function save(){
+  const st = state[cur];
+  st.lv = +$("lv").value; st.prog = Math.max(0,+$("prog").value||0); st.dia = Math.max(0,+$("dia").value||0);
+  document.querySelectorAll("#grid input").forEach(inp=>{
+    st.cnt[+inp.dataset.g][+inp.dataset.s-1] = Math.max(0, +inp.value||0);
+  });
+}
+function load(){
+  const st = state[cur];
+  $("lv").value = st.lv; $("prog").value = st.prog; $("dia").value = st.dia;
+  document.querySelectorAll("#grid input").forEach(inp=>{
+    inp.value = st.cnt[+inp.dataset.g][+inp.dataset.s-1];
+  });
+  setTarget(st.tg, st.ts);
+  $("out").style.display = "none";
+}
+
+/* ============ 사다리 ============ */
+const LO=-20, HI=4;                                  // log5 범위: D★1 ~ SSS★1
+const pos = v => Math.max(0,Math.min(1,(Math.log(v)/Math.log(5) - LO)/(HI-LO)));
+
+const slotOf = (g,s) => 4*g + s - 1;          // D★1=0 … SSS★1=24
+const tgtSlot = () => slotOf(state[cur].tg, state[cur].ts);
+
+// 합성은 상향 단방향이라 목표보다 위에 있는 아이템은 재료로 쪼갤 수 없다.
+// 그래서 목표 칸 이하만 가치로 합산한다.
+function totalValue(){
+  const st = state[cur], ts = tgtSlot(); let v=0;
+  GRADES.forEach((g,gi)=>{ for(let s=1;s<=g.stars;s++){
+    if(slotOf(gi,s) <= ts) v += st.cnt[gi][s-1]*val(gi,s);
+  }});
+  return v;
+}
+// 목표보다 위라서 계산에서 빠진 아이템 개수
+function overTarget(){
+  const st = state[cur], ts = tgtSlot(); let n=0;
+  GRADES.forEach((g,gi)=>{ for(let s=1;s<=g.stars;s++){
+    if(slotOf(gi,s) > ts) n += st.cnt[gi][s-1];
+  }});
+  return n;
+}
+function targetValue(){
+  const st = state[cur];
+  return Math.max(1,+$("qty").value||1) * val(st.tg, st.ts);
+}
+function fmt(n,d=0){ return n.toLocaleString("ko-KR",{maximumFractionDigits:d}); }
+function tName(){ const st=state[cur]; const g=GRADES[st.tg];
+  return g.k + (g.stars>1 ? " ★"+st.ts : ""); }
+
+function drawLadder(){
+  const rail = $("rail");
+  [...rail.querySelectorAll(".tick,.pin")].forEach(e=>e.remove());
+  const v = totalValue(), t = targetValue();
+  $("fill").style.width = (pos(v)*100).toFixed(2)+"%";
+
+  GRADES.forEach((g,gi)=>{
+    const p = pos(val(gi,1))*100;
+    const d = document.createElement("div");
+    d.className="tick"; d.style.left=p+"%";
+    d.innerHTML = `<span style="color:${g.col}">${g.k}</span>`;
+    rail.appendChild(d);
+  });
+  const mk=(left,txt,col,icon)=>{
+    const e=document.createElement("div");
+    e.className="pin"; e.style.left=Math.max(4,Math.min(96,left))+"%"; e.style.color=col;
+    e.innerHTML=`<b>${icon}</b>${txt}`; rail.appendChild(e);
+  };
+  mk(pos(v)*100, "현재", "var(--gold)", "▼");
+  mk(pos(t)*100, "목표", "#ff7ec8", "▽");
+}
+
+/* ============ 시뮬레이션 ============ */
+// 진행도가 현재 레벨 요구치를 넘으면 초과분을 윗레벨로 넘긴다 (그냥 두면 소멸함)
+function normLv(lv, prog){
+  lv = Math.min(15, Math.max(1, lv|0)); prog = Math.max(0, prog|0);
+  while(lv < 15 && prog >= REQ[lv]){ prog -= REQ[lv]; lv++; }
+  if(lv >= 15) prog = 0;
+  return {lv, prog};
+}
+function simulate(target, V0, startLv, startProg, trials){
+  ({lv:startLv, prog:startProg} = normLv(startLv, startProg));
+  const out = new Float64Array(trials);
+  const lvAt = new Int8Array(trials);
+  const CAP = 5e7;
+  for(let t=0;t<trials;t++){
+    let v = V0, pulls = 0, done = false, endLv = 15;
+    for(let lv = startLv; lv <= 15 && !done; lv++){
+      let band = (lv===15) ? 1e9 : (REQ[lv] - (lv===startLv ? startProg : 0));
+      if(band <= 0) continue;
+      const det = DET[lv], pool = POOL[lv];
+      const lg = Math.log(1 - pool.total);
+      let rem = band;
+      while(rem > 0){
+        let gap = Math.floor(Math.log(Math.random())/lg) + 1;
+        if(gap > rem){
+          if(v + det*rem >= target){ out[t]=pulls+(target-v)/det; endLv=lv; done=true; }
+          else { v += det*rem; pulls += rem; }
+          break;
+        }
+        if(v + det*gap >= target){ out[t]=pulls+(target-v)/det; endLv=lv; done=true; break; }
+        v += det*gap; pulls += gap; rem -= gap;
+        const r = Math.random(); let i=0;
+        while(i < pool.cum.length-1 && pool.cum[i] < r) i++;
+        v += pool.vals[i];
+        if(v >= target){ out[t]=pulls; endLv=lv; done=true; break; }
+        if(pulls > CAP){ done=true; out[t]=NaN; break; }
+      }
+    }
+    if(!done) out[t] = NaN;
+    lvAt[t] = endLv;
+  }
+  return {out, lvAt};
+}
+function pct(sorted, q){
+  const i = (sorted.length-1)*q, lo = Math.floor(i), hi = Math.ceil(i);
+  return sorted[lo] + (sorted[hi]-sorted[lo])*(i-lo);
+}
+// 총 소환수를 레벨 구간으로 분해
+function split(total, startLv, startProg){
+  const n = normLv(startLv, startProg);
+  const rows=[]; let left = total, lv = n.lv, prog = n.prog;
+  while(left > 0.5 && lv <= 15){
+    const cap = (lv===15) ? Infinity : REQ[lv]-prog;
+    const use = Math.min(left, cap);
+    rows.push({lv, n:use}); left -= use; prog = 0; lv++;
+    if(rows.length>20) break;
+  }
+  return rows;
+}
+
+/* ============ 실행 ============ */
+$("go").onclick = () => {
+  save();
+  const st = state[cur];
+  const V0 = totalValue(), T = targetValue();
+  const over = overTarget();
+  const overNote = over>0
+    ? `<div class="note" style="border-top:0;padding-top:0;margin-top:10px">
+         목표보다 등급이 높은 아이템 <b>${over}개</b>는 계산에서 뺐습니다.
+         합성은 위로만 되기 때문에 이미 목표를 넘어선 장비는 재료로 되돌릴 수 없어요.</div>`
+    : ``;
+  const bundle = Math.max(1,+$("bundle").value||55);
+  const cost   = Math.max(1,+$("cost").value||2500);
+  const perPull = cost/bundle;
+
+  if(V0 >= T){
+    $("out").style.display="block";
+    $("out").innerHTML = `<div class="plabel">결과</div>
+      <div class="big">0<span class="bigunit">다이아</span></div>
+      <p style="margin:12px 0 0;font-size:13.5px">
+        지금 보유한 <b>${CATS[cur]}</b>만 전부 합성하면 <b>${tName()}</b> ${$("qty").value}개를 이미 만들 수 있습니다.
+        추가 소환이 필요 없어요.</p>${overNote}`;
+    return;
+  }
+
+  $("go").disabled = true; $("go").textContent = "계산 중…";
+  setTimeout(()=>{
+    const trials = +$("trials").value;
+    const {out, lvAt} = simulate(T, V0, st.lv, st.prog, trials);
+    const ok = Array.from(out).filter(x=>isFinite(x)).sort((a,b)=>a-b);
+    $("go").disabled = false; $("go").textContent = "계산하기";
+
+    if(ok.length < trials*0.5){
+      $("out").style.display="block";
+      $("out").innerHTML = `<div class="plabel">결과</div>
+        <div class="warn">이 목표는 현실적인 소환 횟수 안에서 달성되지 않습니다. 목표를 낮추거나 상점 레벨을 올린 뒤 다시 계산해 보세요.</div>`;
+      return;
+    }
+
+    const q = f => pct(ok,f);
+    const med = q(.5), p5 = q(.05), p95 = q(.95), p25=q(.25), p75=q(.75);
+    const mean = ok.reduce((a,b)=>a+b,0)/ok.length;
+    const dia = n => Math.ceil(n/bundle)*cost;
+
+    // 달성 시점 레벨 최빈값
+    const cntLv = {}; for(const L of lvAt) cntLv[L]=(cntLv[L]||0)+1;
+    const modeLv = Object.keys(cntLv).sort((a,b)=>cntLv[b]-cntLv[a])[0];
+
+    const rows = split(med, st.lv, st.prog);
+    const shortfall = st.dia>0 ? dia(med) - st.dia : null;
+
+    $("out").style.display="block";
+    $("out").innerHTML = `
+      <div class="plabel">결과 <span>${CATS[cur]} · Lv.${st.lv}에서 시작 · ${fmt(trials)}회 시뮬레이션</span></div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:4px">${tName()} ${$("qty").value}개까지</div>
+      <div class="big">${fmt(dia(med))}<span class="bigunit">다이아 (중앙값)</span></div>
+      <dl class="kv">
+        <dt>소환 횟수</dt><dd>${fmt(med)}회</dd>
+        <dt>90% 구간</dt><dd>${fmt(dia(p5))} ~ ${fmt(dia(p95))} 다이아</dd>
+        <dt>평균</dt><dd>${fmt(dia(mean))} 다이아</dd>
+        <dt>달성 시 상점 레벨</dt><dd>Lv.${modeLv}</dd>
+        ${st.dia>0 ? `<dt>보유 다이아</dt><dd>${fmt(st.dia)}</dd>
+        <dt>${shortfall>0?"부족분":"여유분"}</dt><dd style="color:${shortfall>0?"var(--s)":"var(--c)"}">${fmt(Math.abs(shortfall))} 다이아</dd>` : ``}
+      </dl>
+      <table>
+        <tr><th>운</th><th>소환</th><th>다이아</th></tr>
+        <tr><td>상위 5%</td><td>${fmt(p5)}</td><td>${fmt(dia(p5))}</td></tr>
+        <tr><td>상위 25%</td><td>${fmt(p25)}</td><td>${fmt(dia(p25))}</td></tr>
+        <tr><td>중앙값</td><td>${fmt(med)}</td><td>${fmt(dia(med))}</td></tr>
+        <tr><td>하위 25%</td><td>${fmt(p75)}</td><td>${fmt(dia(p75))}</td></tr>
+        <tr><td>하위 5%</td><td>${fmt(p95)}</td><td>${fmt(dia(p95))}</td></tr>
+      </table>
+      <table>
+        <tr><th>중앙값 기준 구간</th><th>소환</th><th>다이아</th></tr>
+        ${rows.map(r=>`<tr><td>Lv.${r.lv}</td><td>${fmt(r.n)}</td><td>${fmt(Math.round(r.n*perPull))}</td></tr>`).join("")}
+      </table>
+      <div class="note">
+        하위 등급도 전부 위로 합성한다고 가정합니다. 등급이 한 단계 오를 때마다 가치가 5배라서,
+        S등급 아래로는 SS·SSS 목표에 거의 기여하지 못합니다. 반대로 <b>S★4 5개 = SS★1</b>이므로 S등급은 버리지 마세요.
+      </div>${overNote}`;
+    $("out").scrollIntoView({behavior:"smooth", block:"nearest"});
+  }, 30);
+};
+
+$("clear").onclick = () => {
+  state[cur].cnt = blank();
+  document.querySelectorAll("#grid input").forEach(i=>i.value=0);
+  save(); drawLadder(); $("out").style.display="none";
+};
+
+$("share").onclick = () => {
+  save();
+  try{
+    const packed = state.map(s=>[s.lv,s.prog,s.dia,s.tg,s.ts,s.cnt.flat().join(".")].join("~")).join("|");
+    const url = location.origin + location.pathname + "#" + encodeURIComponent(packed);
+    navigator.clipboard.writeText(url);
+    $("share").textContent = "복사했습니다";
+    setTimeout(()=>$("share").textContent="설정 링크 복사", 1600);
+  }catch(err){
+    $("share").textContent = "이 환경에서는 복사할 수 없습니다";
+    setTimeout(()=>$("share").textContent="설정 링크 복사", 2200);
+  }
+};
+
+// 링크로 들어온 설정 복원
+try{
+  if(location.hash.length > 1){
+    const parts = decodeURIComponent(location.hash.slice(1)).split("|");
+    parts.forEach((p,i)=>{
+      if(i>=state.length) return;
+      const [lv,prog,dia,tg,ts,flat] = p.split("~");
+      const nums = flat.split(".").map(Number);
+      let k=0; const c = blank();
+      GRADES.forEach((g,gi)=>{ for(let s=0;s<g.stars;s++) c[gi][s]=nums[k++]||0; });
+      Object.assign(state[i], {lv:+lv, prog:+prog, dia:+dia, tg:+tg, ts:+ts, cnt:c});
+    });
+  }
+}catch(err){ /* 잘못된 링크는 무시하고 기본값 사용 */ }
+
+load();
+drawLadder();
+</script>
+</body>
+</html>
