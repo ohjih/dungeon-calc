@@ -403,10 +403,11 @@ en:{
   warn:"This target is not reached within any realistic number of summons. Lower the target or raise your shop level, then calculate again.",
   locale:"en-US"
 }};
+const hasLang = k => Object.prototype.hasOwnProperty.call(I18N, k);
 let LANG = "ko";
 
 function applyLang(lang, redraw){
-  LANG = I18N[lang] ? lang : "ko";
+  LANG = hasLang(lang) ? lang : "ko";
   const L = I18N[LANG];
   document.documentElement.lang = LANG;
   document.title = L.docTitle;
@@ -528,9 +529,10 @@ function overTarget(){
   }});
   return n;
 }
+const qtyVal = () => Math.max(1, Math.floor(+$("qty").value) || 1);
 function targetValue(){
   const st = state[cur];
-  return Math.max(1,+$("qty").value||1) * val(st.tg, st.ts);
+  return qtyVal() * val(st.tg, st.ts);
 }
 function fmt(n,d=0){ return n.toLocaleString(I18N[LANG].locale,{maximumFractionDigits:d}); }
 function tName(){ const st=state[cur]; const g=GRADES[st.tg];
@@ -636,7 +638,7 @@ $("go").onclick = () => {
     $("out").innerHTML = `<div class="plabel">${L.res}</div>
       <div class="big">0<span class="bigunit">${L.dia}</span></div>
       <p style="margin:12px 0 0;font-size:13.5px">
-        ${L.zeroMsg(CATS[cur], tName(), $("qty").value)}</p>${overNote}`;
+        ${L.zeroMsg(CATS[cur], tName(), qtyVal())}</p>${overNote}`;
     return;
   }
 
@@ -669,7 +671,7 @@ $("go").onclick = () => {
     $("out").style.display="block";
     $("out").innerHTML = `
       <div class="plabel">${L.res} <span>${L.resSub(CATS[cur], st.lv, fmt(trials))}</span></div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:4px">${L.upTo(tName(), $("qty").value)}</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:4px">${L.upTo(tName(), qtyVal())}</div>
       <div class="big">${fmt(dia(med))}<span class="bigunit">${L.diaMed}</span></div>
       <dl class="kv">
         <dt>${L.kPulls}</dt><dd>${L.pullUnit(fmt(med))}</dd>
@@ -707,9 +709,14 @@ $("share").onclick = () => {
   try{
     const packed = state.map(s=>[s.lv,s.prog,s.dia,s.tg,s.ts,s.cnt.flat().join(".")].join("~")).join("|");
     const url = location.origin + location.pathname + "?lang=" + LANG + "#" + encodeURIComponent(packed);
-    navigator.clipboard.writeText(url);
-    $("share").textContent = I18N[LANG].bCopied;
-    setTimeout(()=>$("share").textContent=I18N[LANG].bShare, 1600);
+    const fail = ()=>{
+      $("share").textContent = I18N[LANG].bCopyFail;
+      setTimeout(()=>$("share").textContent=I18N[LANG].bShare, 2200);
+    };
+    Promise.resolve(navigator.clipboard.writeText(url)).then(()=>{
+      $("share").textContent = I18N[LANG].bCopied;
+      setTimeout(()=>$("share").textContent=I18N[LANG].bShare, 1600);
+    }, fail);
   }catch(err){
     $("share").textContent = I18N[LANG].bCopyFail;
     setTimeout(()=>$("share").textContent=I18N[LANG].bShare, 2200);
@@ -741,8 +748,8 @@ $("lang").addEventListener("click", e=>{
 (function initLang(){
   let pick = null;
   try{ pick = new URLSearchParams(location.search).get("lang"); }catch(err){ /* 구형 브라우저 */ }
-  if(!I18N[pick]){ try{ pick = localStorage.getItem("gacha-lang"); }catch(err){ pick = null; } }
-  if(!I18N[pick]) pick = /^ko/i.test(navigator.language || "") ? "ko" : "en";
+  if(!hasLang(pick)){ try{ pick = localStorage.getItem("gacha-lang"); }catch(err){ pick = null; } }
+  if(!hasLang(pick)) pick = /^ko/i.test(navigator.language || "") ? "ko" : "en";
   applyLang(pick, false);
 })();
 
