@@ -34,11 +34,11 @@
   목표가 클수록(SS 이상) 오차는 작아집니다.
 - D\~A를 평균으로 처리하므로 **S 1\~2성처럼 값싼 목표에서는 90% 구간 위쪽이 좁게 나옵니다.**
   실제로는 운이 나쁘면 더 걸릴 수 있습니다. SS 이상 목표에서는 영향이 없습니다.
-- **레벨업 요구 소환수는 Lv4→5부터 Lv10→11까지 실측값**입니다(고급 설정에 `실측`으로 표시).
+- **레벨업 요구 소환수는 Lv4→5부터 Lv12→13까지 실측값**입니다(고급 설정에 `실측`으로 표시).
   그 바깥은 추세로 채운 추정값입니다.
   - `Lv1→2 ~ Lv3→4` 추정은 **상점 레벨 4 이상에서 시작하면 쓰이지 않습니다.**
     Lv4 미만에서 시작하면 오차가 커집니다(S 4★ 기준 3,700\~6,600회 사이에서 흔들림).
-  - `Lv11→12` 이상 추정은 결과를 3% 정도밖에 안 움직여서 실용상 무시해도 됩니다.
+  - `Lv13→14`, `Lv14→15` 추정은 결과를 잡음 수준(0\~2%)으로만 움직여 무시해도 됩니다.
 
 ## 확인된 전제
 
@@ -80,11 +80,11 @@ Estimates how many summons and diamonds it takes to build one target item, using
   The bigger the target (SS and above), the smaller the error.
 - Because D\~A are averaged, **the upper half of the 90% range is too narrow for cheap targets like S 1\~2 star.**
   A bad run can really take longer. This does not affect SS-tier goals.
-- **Level-up requirements are measured in game from Lv4→5 through Lv10→11** (tagged `MEASURED` under `Advanced`).
+- **Level-up requirements are measured in game from Lv4→5 through Lv12→13** (tagged `MEASURED` under `Advanced`).
   Everything outside that range is extrapolated from the measured trend.
   - The `Lv1→2 ~ Lv3→4` estimates are **never used if you start at shop level 4 or higher.**
     Below that they add real error (an S 4-star goal ranges 3,700\~6,600 summons depending on the guess).
-  - The `Lv11→12` and beyond estimates move results by only about 3%, so they are safe to ignore.
+  - The `Lv13→14` and `Lv14→15` estimates move results only within noise (0\~2%), so they are safe to ignore.
 
 ## Confirmed assumptions
 
