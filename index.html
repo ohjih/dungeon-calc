@@ -313,6 +313,25 @@ const STARF = STAR.reduce((a,p,i)=>a+p*Math.pow(5,i),0); // 19.4
 const DEFREQ = {1:800,2:1000,3:1300,4:1700,5:2200,6:3800,7:7600,8:11700,
                 9:14500,10:20000,11:25000,12:30000,13:35000,14:40000};
 const MEASURED = new Set([4,5,6,7,8,9,10,11,12]);
+
+// 레벨 보상 — 그 레벨에 도달하면 한 번 준다. [등급, 별, 개수]
+// 등급: 3=A 4=S 5=SS 6=SSS. 4개 카테고리가 같은 표를 쓴다.
+const LVREWARD = {
+  2:[[3,2,1]], 3:[[3,3,1]], 4:[[3,4,1]],
+  5:[[4,2,1]], 6:[[4,3,1]], 7:[[4,4,1]],
+  8:[[5,1,1]], 9:[[5,2,1]], 10:[[5,3,1]], 11:[[5,3,3]],
+  12:[[5,4,1]], 13:[[5,4,3]], 14:[[6,1,1]], 15:[[6,1,1]]
+};
+// 목표보다 위 등급 보상은 재료로 쪼갤 수 없으니 뺀다 (보유 수량과 같은 규칙)
+function rewardTable(tSlot){
+  const r = new Float64Array(16);
+  for(const lv in LVREWARD){
+    let sum = 0;
+    for(const [g,st,n] of LVREWARD[lv]) if(4*g+st-1 <= tSlot) sum += n*val(g,st);
+    r[lv] = sum;
+  }
+  return r;
+}
 let REQ = Object.assign({}, DEFREQ);
 
 // D~A 등급의 결정론적 기대 가치 (분산이 무시 가능해 평균으로 처리)
@@ -355,7 +374,7 @@ ko:{
   advT:"고급 설정", fBundle:"묶음 소환 횟수", fCost:"묶음 가격 (다이아)",
   pReq:"레벨업에 필요한 소환 횟수", pReqSub:"lv4→5 ~ lv12→13 은 실측값. 앞뒤 구간은 그 추세로 채운 추정값",
   measured:"실측", estimated:"추정",
-  foot:"등급·별 확률표는 게임 내 확률 공개표에서 옮겨 적은 값이고, 4개 카테고리가 모두 같은 확률을 씁니다. 천장(pity)은 없습니다. <b>레벨업 소환수는 lv4→5부터 lv12→13까지 실측</b>이고, 그 앞뒤는 추세로 채운 추정값입니다 — 상점 레벨 4 미만에서 시작하면 오차가 커질 수 있습니다. 결과는 시뮬레이션 추정치이며 실제 결과는 크게 달라질 수 있습니다.",
+  foot:"등급·별 확률표는 게임 내 확률 공개표에서 옮겨 적은 값이고, 4개 카테고리가 모두 같은 확률을 씁니다. 천장(pity)은 없습니다. <b>레벨 보상 장비(Lv2 A★2 ~ Lv15 SSS★1)도 계산에 포함</b>되며, 지금 상점 레벨보다 위에서 받을 몫만 더합니다. <b>레벨업 소환수는 lv4→5부터 lv12→13까지 실측</b>이고, 그 앞뒤는 추세로 채운 추정값입니다 — 상점 레벨 4 미만에서 시작하면 오차가 커질 수 있습니다. 결과는 시뮬레이션 추정치이며 실제 결과는 크게 달라질 수 있습니다.",
   cats:["무기","마법서","반지","탈리스만"],
   target:"목표", aria:(g,s)=>`${g} ${s}성 보유 수량`, now:"현재", tgt:"목표",
   res:"결과", resSub:(c,lv,n)=>`${c} · Lv.${lv}에서 시작 · ${n}회 시뮬레이션`,
@@ -388,7 +407,7 @@ en:{
   advT:"Advanced", fBundle:"Summons per bundle", fCost:"Bundle price (diamonds)",
   pReq:"Summons needed per level-up", pReqSub:"lv4→5 through lv12→13 are measured; the ranges before and after are extrapolated",
   measured:"MEASURED", estimated:"EST.",
-  foot:"The grade and star tables come straight from the game's published drop rates, and all four categories share them. There is no pity system. <b>Level-up costs are measured from lv4→5 through lv12→13</b>; the ranges outside that are extrapolated — starting below shop level 4 carries more error. Results are simulation estimates and real outcomes can vary widely.",
+  foot:"The grade and star tables come straight from the game's published drop rates, and all four categories share them. There is no pity system. <b>Level-up reward gear (Lv2 A★2 through Lv15 SSS★1) is counted too</b>, only for levels above your current one. <b>Level-up costs are measured from lv4→5 through lv12→13</b>; the ranges outside that are extrapolated — starting below shop level 4 carries more error. Results are simulation estimates and real outcomes can vary widely.",
   cats:["Weapon","Spellbook","Ring","Talisman"],
   target:"TARGET", aria:(g,s)=>`${g} ${s}-star owned`, now:"now", tgt:"goal",
   res:"Result", resSub:(c,lv,n)=>`${c} · starting at Lv.${lv} · ${n} runs`,
@@ -569,7 +588,7 @@ function normLv(lv, prog){
   if(lv >= 15) prog = 0;
   return {lv, prog};
 }
-function simulate(target, V0, startLv, startProg, trials){
+function simulate(target, V0, startLv, startProg, trials, RW){
   ({lv:startLv, prog:startProg} = normLv(startLv, startProg));
   const out = new Float64Array(trials);
   const lvAt = new Int8Array(trials);
@@ -577,6 +596,10 @@ function simulate(target, V0, startLv, startProg, trials){
   for(let t=0;t<trials;t++){
     let v = V0, pulls = 0, done = false, endLv = 15;
     for(let lv = startLv; lv <= 15 && !done; lv++){
+      if(lv > startLv && RW[lv] > 0){            // 이 레벨에 올라오면서 보상을 받는다
+        v += RW[lv];
+        if(v >= target){ out[t]=pulls; endLv=lv; done=true; break; }
+      }
       let band = (lv===15) ? 1e9 : (REQ[lv] - (lv===startLv ? startProg : 0));
       if(band <= 0) continue;
       const det = DET[lv], pool = POOL[lv];
@@ -646,7 +669,7 @@ $("go").onclick = () => {
   $("go").disabled = true; $("go").textContent = L.bCalc;
   setTimeout(()=>{
     const trials = +$("trials").value;
-    const {out, lvAt} = simulate(T, V0, st.lv, st.prog, trials);
+    const {out, lvAt} = simulate(T, V0, st.lv, st.prog, trials, rewardTable(tgtSlot()));
     const ok = Array.from(out).filter(x=>isFinite(x)).sort((a,b)=>a-b);
     $("go").disabled = false; $("go").textContent = L.bGo;
 
